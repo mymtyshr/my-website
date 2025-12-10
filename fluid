@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <title>体液量 × Na濃度 アプリ（デモ）</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      margin: 0;
+      padding: 24px;
+      background: #f5f5f5;
+    }
+
+    h1 {
+      font-size: 20px;
+      margin-bottom: 8px;
+    }
+
+    .container {
+      display: flex;
+      gap: 32px;
+      align-items: flex-start;
+      flex-wrap: wrap;
+    }
+
+    /* 平面（Na濃度 × 体液量） */
+    .plane-wrapper {
+      position: relative;
+    }
+
+    .plane-title {
+      margin-bottom: 8px;
+      font-weight: 600;
+    }
+
+    .plane {
+      position: relative;
+      width: 320px;
+      height: 320px;
+      border: 2px solid #999;
+      background: #ffffff;
+      border-radius: 4px;
+      box-sizing: border-box;
+      cursor: crosshair;
+      user-select: none;
+    }
+
+    /* 軸ラベル */
+    .axis-label-y,
+    .axis-label-y-top,
+    .axis-label-y-bottom,
+    .axis-label-x,
+    .axis-label-x-left,
+    .axis-label-x-right {
+      position: absolute;
+      font-size: 12px;
+      color: #333;
+    }
+
+    .axis-label-y {
+      left: -36px;
+      top: 50%;
+      transform: translateY(-50%) rotate(-90deg);
+      transform-origin: center;
+      font-weight: 600;
+    }
+
+    .axis-label-y-top {
+      left: -16px;
+      top: -10px;
+    }
+
+    .axis-label-y-bottom {
+      left: -16px;
+      bottom: -10px;
+    }
+
+    .axis-label-x {
+      bottom: -24px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-weight: 600;
+    }
+
+    .axis-label-x-left {
+      bottom: -10px;
+      left: 0;
+    }
+
+    .axis-label-x-right {
+      bottom: -10px;
+      right: 0;
+    }
+
+    /* ドラッグ用の点 */
+    .handle {
+      position: absolute;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #ff7f50;
+      border: 2px solid #fff;
+      box-shadow: 0 0 0 2px rgba(0,0,0,0.2);
+      transform: translate(-9px, -9px);
+      cursor: grab;
+    }
+
+    /* 人形表示エリア */
+    .person-panel {
+      min-width: 220px;
+      background: #ffffff;
+      border-radius: 12px;
+      padding: 16px 20px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+    }
+
+    .person-title {
+      font-weight: 600;
+      margin-bottom: 12px;
+    }
+
+    .person {
+      position: relative;
+      width: 120px;
+      margin: 0 auto 12px;
+    }
+
+    .head {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: #d8d8d8;
+      margin: 0 auto;
+    }
+
+    .body {
+      position: relative;
+      width: 100px;
+      height: 140px;
+      border-radius: 30px;
+      background: #d8d8d8;
+      margin: 0 auto;
+      overflow: hidden;
+    }
+
+    .water {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 50%; /* JSで変更 */
+      background: #bde9ff; /* JSで変更 */
+      transition: height 0.1s linear, background-color 0.1s linear;
+    }
+
+    .state-label {
+      text-align: center;
+      font-size: 16px;
+      font-weight: 700;
+      margin-top: 4px;
+    }
+
+    .info {
+      font-size: 12px;
+      margin-top: 8px;
+      line-height: 1.6;
+      color: #444;
+    }
+
+    .value-row {
+      font-size: 13px;
+      margin-top: 4px;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <h1>体液量 × Na濃度　インタラクティブ図（試作）</h1>
+  <p>オレンジの点（人形の位置）をドラッグすると、体液量とNa濃度に応じて、人形の中の水の<strong>量</strong>と<strong>濃さ</strong>が変化します。</p>
+
+  <div class="container">
+    <!-- 2D 平面 -->
+    <div class="plane-wrapper">
+      <div class="plane-title">体液量（縦） × Na濃度（横）</div>
+      <div id="plane" class="plane">
+        <div class="axis-label-y">体液量</div>
+        <div class="axis-label-y-top">多</div>
+        <div class="axis-label-y-bottom">少</div>
+        <div class="axis-label-x">Na濃度</div>
+        <div class="axis-label-x-left">低</div>
+        <div class="axis-label-x-right">高</div>
+
+        <div id="handle" class="handle"></div>
+      </div>
+    </div>
+
+    <!-- 人形 -->
+    <div class="person-panel">
+      <div class="person-title">人形の中の水</div>
+      <div class="person">
+        <div class="head"></div>
+        <div class="body">
+          <div id="water" class="water"></div>
+        </div>
+      </div>
+      <div id="stateLabel" class="state-label">正常</div>
+      <div class="value-row">
+        体液量：<span id="volValue">50</span> ／ Na濃度：<span id="naValue">50</span>
+      </div>
+      <div class="info">
+        ※状態名は大まかな目安です。<br>
+        例）高体液量×低Na：希釈性低Na、低体液量×中等度Na：いわゆる脱水、低体液量×高Na：高Na血症（脱水寄り）など。
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const plane = document.getElementById("plane");
+    const handle = document.getElementById("handle");
+    const water = document.getElementById("water");
+    const stateLabel = document.getElementById("stateLabel");
+    const volValue = document.getElementById("volValue");
+    const naValue = document.getElementById("naValue");
+
+    let dragging = false;
+
+    // 状態テーブル（体液量：high/mid/low × Na：low/mid/high）
+    const stateTable = {
+      "high-low": "希釈性低Na",
+      "mid-low": "SIADH",
+      "low-low": "低張性脱水",
+      "high-mid": "循環血液量過剰",
+      "mid-mid": "正常",
+      "low-mid": "いわゆる脱水",
+      "high-high": "食塩中毒",
+      "mid-high": "高Na血症",
+      "low-high": "高Na血症（脱水寄り）"
+    };
+
+    function clamp(v, min, max) {
+      return Math.min(Math.max(v, min), max);
+    }
+
+    function moveHandle(clientX, clientY) {
+      const rect = plane.getBoundingClientRect();
+      let x = clamp(clientX - rect.left, 0, rect.width);
+      let y = clamp(clientY - rect.top, 0, rect.height);
+
+      // 点の位置を更新
+      handle.style.left = x + "px";
+      handle.style.top = y + "px";
+
+      // 0〜1に正規化
+      const naRatio = x / rect.width;          // 0（低Na）〜1（高Na）
+      const volRatio = 1 - y / rect.height;   // 0（少）〜1（多）
+
+      updatePerson(volRatio, naRatio);
+    }
+
+    function updatePerson(volRatio, naRatio) {
+      // 数値表示（0〜100）
+      const volPercent = Math.round(volRatio * 100);
+      const naPercent = Math.round(naRatio * 100);
+      volValue.textContent = volPercent;
+      naValue.textContent = naPercent;
+
+      // 水の高さ（最低20%〜最高95%くらいにする）
+      const minH = 20;
+      const maxH = 95;
+      const h = minH + (maxH - minH) * volRatio;
+      water.style.height = h + "%";
+
+      // 水の色：低Naで薄い水色，高Naで濃い青に線形補間
+      function lerp(a, b, t) { return a + (b - a) * t; }
+      const lowColor = { r: 189, g: 233, b: 255 }; // #bde9ff
+      const highColor = { r: 0, g: 59, b: 122 };   // #003b7a
+      const r = Math.round(lerp(lowColor.r, highColor.r, naRatio));
+      const g = Math.round(lerp(lowColor.g, highColor.g, naRatio));
+      const b = Math.round(lerp(lowColor.b, highColor.b, naRatio));
+      water.style.backgroundColor = `rgb(${r}, ${g}, ${b})`;
+
+      // 区分を決める
+      const volLevel = volRatio > 2/3 ? "high" : volRatio > 1/3 ? "mid" : "low";
+      const naLevel  = naRatio  < 1/3 ? "low"  : naRatio  < 2/3 ? "mid" : "high";
+
+      const key = `${volLevel}-${naLevel}`;
+      stateLabel.textContent = stateTable[key] || "—";
+    }
+
+    // マウス操作
+    plane.addEventListener("mousedown", (e) => {
+      dragging = true;
+      moveHandle(e.clientX, e.clientY);
+    });
+
+    window.addEventListener("mousemove", (e) => {
+      if (!dragging) return;
+      moveHandle(e.clientX, e.clientY);
+    });
+
+    window.addEventListener("mouseup", () => {
+      dragging = false;
+    });
+
+    // タッチ操作（スマホ/タブレット用）
+    plane.addEventListener("touchstart", (e) => {
+      e.preventDefault();
+      dragging = true;
+      const t = e.touches[0];
+      moveHandle(t.clientX, t.clientY);
+    }, { passive: false });
+
+    window.addEventListener("touchmove", (e) => {
+      if (!dragging) return;
+      e.preventDefault();
+      const t = e.touches[0];
+      moveHandle(t.clientX, t.clientY);
+    }, { passive: false });
+
+    window.addEventListener("touchend", () => {
+      dragging = false;
+    });
+
+    // 初期位置（中央）
+    window.addEventListener("load", () => {
+      const rect = plane.getBoundingClientRect();
+      moveHandle(rect.left + rect.width / 2, rect.top + rect.height / 2);
+    });
+  </script>
+</body>
+</html>
