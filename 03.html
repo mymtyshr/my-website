@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>輸液製剤の体内分布</title>
+<style>
+  :root{
+    --bg:#fff; --card:#fff; --text:#0f172a; --muted:#64748b; --line:#e2e8f0;
+    --shadow:0 12px 30px rgba(2,6,23,.08);
+    --ic: rgba(224, 224, 224, 0.838);
+    --is: rgba(154, 208, 255, 0.7);
+    --iv: rgba(255, 152, 152, 0.75);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);
+    font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans JP",sans-serif;}
+  .wrap{max-width:920px;margin:26px auto;padding:0 16px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:18px;
+    padding:18px;box-shadow:var(--shadow)}
+  h1{font-size:18px;margin:0 0 14px}
+  .row{display:flex;gap:12px;flex-wrap:wrap;align-items:end}
+  .ctrl{flex:1;min-width:240px}
+  label{display:block;font-size:12px;color:var(--muted);margin:0 0 6px}
+  select, input[type="range"]{width:100%}
+  select{border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:#fff;outline:none}
+  .topline{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+  .pill{display:inline-flex;gap:8px;align-items:center;border:1px solid var(--line);
+    border-radius:999px;padding:6px 10px;font-size:12px;color:var(--muted);background:#f8fafc}
+  .dose{font-variant-numeric:tabular-nums;font-weight:700;color:var(--text)}
+
+  /* 累積棒 */
+  .stackWrap{margin-top:14px;border:1px solid var(--line);border-radius:16px;padding:14px;background:#fff}
+  .stackTitle{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+  .stackTitle b{font-size:13px}
+  .stackTitle span{font-size:12px;color:var(--muted)}
+  .stackTrack{
+    margin-top:10px;height:56px;border-radius:14px;overflow:hidden;
+    background:#f1f5f9;border:1px solid var(--line);display:flex;
+  }
+  .seg{
+    height:100%;
+    flex: 0 0 0%;
+    display:flex;align-items:center;justify-content:center;
+    font-weight:800;
+    transition:flex-basis 220ms ease; /* ←伸び縮み */
+    position:relative;
+  }
+  .seg:not(:last-child)::after{
+    content:"";position:absolute;right:0;top:0;bottom:0;width:2px;background:rgba(15,23,42,.25);
+  }
+  .seg.is::after{
+    background: repeating-linear-gradient(
+      to bottom,
+      rgba(15,23,42,.25) 0 6px,
+      transparent 6px 10px
+    );
+  }
+  .ic{background:var(--ic)}
+  .is{background:var(--is)}
+  .iv{background:var(--iv)}
+  .seg span{filter: drop-shadow(0 1px 0 rgba(255,255,255,.35));}
+  .seg.iv span{display:block;width:100%;text-align:center;}
+  .shade{
+    position:absolute;top:0;bottom:0;right:0;width:0;
+    background:rgba(0,0,0,.14);
+    mix-blend-mode:multiply;
+    transition:width 220ms ease;
+    pointer-events:none;
+  }
+
+  /* 下の数値カード */
+  .grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:12px}
+  .box{border:1px solid var(--line);border-radius:16px;padding:14px;background:#fff}
+  .box.ic{background:var(--ic);border-color:rgba(255,255,255,.4);color:var(--text)}
+  .box.is{background:var(--is);border-color:rgba(255,255,255,.4);color:var(--text)}
+  .box.iv{background:var(--iv);border-color:rgba(255,255,255,.4);color:var(--text)}
+  .title{display:flex;justify-content:space-between;gap:10px;align-items:baseline}
+  .title b{font-size:13px}
+  .title span{font-size:12px;color:var(--muted);display:none}
+  .num{margin-top:10px;font-size:22px;font-weight:800;font-variant-numeric:tabular-nums}
+  .delta{margin-top:2px;font-size:12px;color:rgba(0,0,0,.6)}
+.note{margin:12px 0 0 6px;font-size:12px;color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="card">
+    <h1>輸液製剤の体内分布</h1>
+
+    <div class="row">
+      <div class="ctrl">
+        <label>輸液製剤の種類</label>
+        <select id="fluid">
+          <option value="ns">生理食塩水</option>
+          <option value="sol1">1号液</option>
+          <option value="sol3">3号液</option>
+          <option value="d5w">ブドウ糖液</option>
+        </select>
+      </div>
+
+      <div class="ctrl">
+        <div class="topline">
+          <label style="margin:0">投与量（0〜3000 mL）</label>
+          <span class="pill">現在 <span class="dose" id="doseText">0</span> mL</span>
+        </div>
+        <input id="dose" type="range" min="0" max="3000" step="50" value="0" />
+      </div>
+    </div>
+
+    <div class="stackWrap">
+      <div class="stackTitle">
+        <b>体液分布
+        </b>
+      </div>
+
+      <div class="stackTrack" aria-label="累積棒グラフ">
+        <div class="seg ic" id="segIC"><span>細胞内</span><div class="shade" id="shadeIC"></div></div>
+        <div class="seg is" id="segIS"><span>間質</span><div class="shade" id="shadeIS"></div></div>
+        <div class="seg iv" id="segIV"><span>血管内</span><div class="shade" id="shadeIV"></div></div>
+      </div>
+    </div>
+
+    <div class="grid">
+      <div class="box ic">
+        <div class="title"><b>細胞内</b><span id="icBase"></span></div>
+        <div class="num"><span id="icNow">0.00</span> L</div>
+        <div class="delta">＋<span id="icDelta">0.00</span> L</div>
+      </div>
+      <div class="box is">
+        <div class="title"><b>間質</b><span id="isBase"></span></div>
+        <div class="num"><span id="isNow">0.00</span> L</div>
+        <div class="delta">＋<span id="isDelta">0.00</span> L</div>
+      </div>
+      <div class="box iv">
+        <div class="title"><b>血管内</b><span id="ivBase"></span></div>
+        <div class="num"><span id="ivNow">0.00</span> L</div>
+        <div class="delta">＋<span id="ivDelta">0.00</span> L</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="note">※ 体重 60 kgの場合を想定</div>
+</div>
+
+<script>
+  // 分配比（合計=1.0）※必要なら本の値に差し替え
+  const fractions = {
+    ns:   { iv:0.25,     is:0.75,     ic:0.00 }, // 生理食塩水
+    // 1号液: ブドウ糖50% + 生食50% を単純加重
+    sol1: { iv:0.1666666667, is:0.50, ic:0.3333333333 },
+    // 3号液: ブドウ糖75% + 生食25% を単純加重
+    sol3: { iv:0.125, is:0.375, ic:0.50 },
+    d5w:  { iv:1/12,     is:3/12,     ic:8/12 }
+  };
+
+  // 基準量（L）
+  // 8:3:1 の比率（総量36L想定：IC24 / IS9 / IV3）
+  const base = { iv:3.0, is:9.0, ic:24.0 };
+  const baseTotal = base.iv + base.is + base.ic;
+  // 初期状態で全体の約3/4が埋まるよう最大尺を固定
+  const maxTotal = baseTotal / 0.9;
+
+  const $ = (id)=>document.getElementById(id);
+  const dose = $("dose");
+  const fluid = $("fluid");
+  const fmt = (x)=> (Math.round(x*100)/100).toFixed(2);
+  const clamp01 = (v)=> Math.min(100, Math.max(0, v));
+
+  function setSegPct(el, pct){
+    el.style.flexBasis = pct.toFixed(3) + "%";
+  }
+
+  function setShade(el, delta, now){
+    const pct = now > 0 ? (delta / now) * 100 : 0;
+    el.style.width = clamp01(pct) + "%";
+  }
+
+  function update(){
+    const doseMl = Number(dose.value);
+    $("doseText").textContent = doseMl.toString();
+    const doseL = doseMl / 1000;
+
+    const f = fractions[fluid.value];
+    const d = { iv:doseL*f.iv, is:doseL*f.is, ic:doseL*f.ic };
+    const now = { iv:base.iv+d.iv, is:base.is+d.is, ic:base.ic+d.ic };
+
+    $("ivNow").textContent = fmt(now.iv);
+    $("isNow").textContent = fmt(now.is);
+    $("icNow").textContent = fmt(now.ic);
+
+    $("ivDelta").textContent = fmt(d.iv);
+    $("isDelta").textContent = fmt(d.is);
+    $("icDelta").textContent = fmt(d.ic);
+
+    // 累積棒：絶対量で幅を決定し、余白を残す
+    const pctIC = (now.ic / maxTotal) * 100;
+    const pctIS = (now.is / maxTotal) * 100;
+    const pctIV = (now.iv / maxTotal) * 100;
+
+    setSegPct($("segIC"), pctIC);
+    setSegPct($("segIS"), pctIS);
+    setSegPct($("segIV"), pctIV);
+
+    setShade($("shadeIC"), d.ic, now.ic);
+    setShade($("shadeIS"), d.is, now.is);
+    setShade($("shadeIV"), d.iv, now.iv);
+  }
+
+  dose.addEventListener("input", update);
+  fluid.addEventListener("change", update);
+  update();
+</script>
+</body>
+</html>
