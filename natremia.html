@@ -8,11 +8,11 @@
     :root {
       --bg: #0f172a;
       --panel: #111827;
-      --accent: #38bdf8;
-      --accent-2: #22d3ee;
+      --accent: #f2c94c;      /* Na系: 黄色 */
+      --accent-2: #f59e0b;
       --text: #e5e7eb;
       --muted: #9ca3af;
-      --grid: rgba(255,255,255,0.06);
+      --grid: rgba(255,255,255,0.03);
       --card: #1f2937;
       --danger: #f87171;
       --warn: #fbbf24;
@@ -32,18 +32,8 @@
       gap: 16px;
       padding: 18px;
     }
-    h1 {
-      margin: 0 0 6px;
-      font-size: 22px;
-      letter-spacing: 0.02em;
-      color: #f8fafc;
-    }
-    h2 {
-      margin: 0 0 8px;
-      font-size: 15px;
-      color: #e0f2fe;
-      letter-spacing: 0.02em;
-    }
+    h1 { margin: 0 0 6px; font-size: 22px; letter-spacing: 0.02em; color: #f8fafc; }
+    h2 { margin: 0 0 8px; font-size: 15px; color: #e0f2fe; letter-spacing: 0.02em; }
     .card {
       background: linear-gradient(145deg, #0b1220, #121a2b);
       border: 1px solid rgba(255,255,255,0.04);
@@ -51,36 +41,29 @@
       box-shadow: 0 10px 30px rgba(0,0,0,0.35);
       padding: 14px;
     }
-    .map-card {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
+    .map-card { display: flex; flex-direction: column; gap: 10px; }
     .map-area {
       position: relative;
       height: clamp(320px, 65vh, 520px);
       border-radius: 12px;
       overflow: hidden;
       touch-action: none;
+      user-select: none;
+      -webkit-user-select: none;
     }
+    .map-area * { user-select: none; -webkit-user-select: none; }
     .grid {
-      position: absolute;
-      inset: 0;
+      position: absolute; inset: 0;
       background-image:
         linear-gradient(to right, var(--grid) 1px, transparent 1px),
         linear-gradient(to bottom, var(--grid) 1px, transparent 1px);
-      background-size: calc(100% / 4) calc(100% / 4);
+      background-size: calc(100% / 20) calc(100% / 20);
       border-radius: 10px;
       border: 1px solid rgba(255,255,255,0.04);
     }
-    .cut-lines {
-      position: absolute;
-      inset: 0;
-      pointer-events: none;
-    }
+    .cut-lines { position: absolute; inset: 0; pointer-events: none; }
     .v-line, .h-line {
-      position: absolute;
-      opacity: 0.6;
+      position: absolute; opacity: 0.6;
       background: linear-gradient(to bottom, transparent, rgba(255,255,255,0.5), transparent);
     }
     .v-line { top: 0; bottom: 0; width: 2px; }
@@ -117,27 +100,36 @@
       gap: 6px;
       align-items: center;
       z-index: 3;
+      white-space: nowrap;
     }
-    .axis-x { bottom: 4px; left: 14px; }
-    .axis-y { top: 12px; left: -6px; writing-mode: vertical-rl; transform: rotate(180deg); }
+    .axis-x { bottom: 6px; left: 50%; transform: translate(-50%, 0); }
+    .axis-y { top: 50%; left: 10px; writing-mode: vertical-rl; transform: translate(0, -50%); }
     .person {
       position: absolute;
-      width: 56px;
+      width: 68px;
       height: 120px;
       cursor: grab;
       transform: translate(-50%, -50%);
-      transition: filter 0.2s ease;
       z-index: 2;
       touch-action: none;
     }
-    .person:active { cursor: grabbing; filter: drop-shadow(0 0 12px rgba(56,189,248,0.4)); }
-    .badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 6px 10px;
-      border-radius: 999px;
+    .person:active { cursor: grabbing; }
+    .avatar-label {
+      position: absolute;
+      transform: translate(-50%, 130%);
+      padding: 4px 8px;
+      background: rgba(0,0,0,0.55);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 8px;
       font-size: 12px;
+      color: #e0f2fe;
+      z-index: 3;
+      pointer-events: none;
+      white-space: nowrap;
+    }
+    .badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 6px 10px; border-radius: 999px; font-size: 12px;
       background: rgba(255,255,255,0.06);
       border: 1px solid rgba(255,255,255,0.08);
       margin: 2px 6px 6px 0;
@@ -147,42 +139,22 @@
     .dot-high { background: var(--danger); }
     .dot-low { background: var(--warn); }
     .dot-euvo { background: var(--ok); }
-    .status-main {
-      font-size: 17px;
-      margin: 2px 0 6px;
-      color: #fef9c3;
-    }
-    .state-grid {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 10px;
-    }
-    .state-card {
-      background: var(--card);
-      border: 1px solid rgba(255,255,255,0.06);
-      border-radius: 10px;
-      padding: 10px;
-      min-height: 120px;
-    }
+    .status-main { font-size: 17px; margin: 2px 0 6px; color: #fef9c3; }
+    .state-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+    .state-card { background: var(--card); border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 10px; min-height: 120px; }
     .small { font-size: 12px; color: var(--muted); margin-bottom: 6px; }
-    .pill {
-      display: inline-block;
-      padding: 4px 8px;
-      border-radius: 8px;
-      font-size: 12px;
-      margin: 2px 6px 2px 0;
-      background: rgba(255,255,255,0.08);
-      border: 1px solid rgba(255,255,255,0.06);
-    }
+    .pill { display: inline-block; padding: 4px 8px; border-radius: 8px; font-size: 12px; margin: 2px 6px 2px 0; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.06); }
     .intervention { display: grid; gap: 8px; }
     .bars { display: grid; gap: 10px; }
     .bar-block { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 8px 10px; }
     .bar-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); margin-bottom: 6px; }
-    .bar-track { position: relative; height: 16px; border-radius: 8px; background: rgba(255,255,255,0.08); overflow: hidden; }
-    .bar-fill { position: absolute; inset: 0 0 0 0; width: 0; background: linear-gradient(90deg, var(--accent), var(--accent-2)); border-radius: 8px; transition: width 0.15s ease, left 0.15s ease; }
-    .bar-normal { position: absolute; top: 0; bottom: 0; background: rgba(52,211,153,0.18); border-left: 1px solid rgba(52,211,153,0.5); border-right: 1px solid rgba(52,211,153,0.5); }
-    .track-vol .bar-fill { background: linear-gradient(90deg, #fcd34d, #34d399); }
-    .dual { left: 50%; transform: translateX(0); }
+    .bar-wrap { position: relative; height: 24px; }
+    .bar-track { position: absolute; left: 0; right: 0; top: 4px; height: 16px; border-radius: 8px; background: rgba(255,255,255,0.08); overflow: hidden; z-index: 0; }
+    .bar-fill { position: absolute; inset: 0 0 0 0; width: 0; background: linear-gradient(90deg, var(--accent), var(--accent-2)); border-radius: 8px; transition: width 0.15s ease, left 0.15s ease; z-index: 1; }
+    .track-vol .bar-fill { background: linear-gradient(90deg, #9be7ff, #38bdf8); }
+    .range-rail { position: absolute; inset: 0; border-radius: 999px; pointer-events: none; z-index: 2; }
+    .range-tick { position: absolute; top: -4px; width: 2px; height: 24px; background: rgba(255,255,255,0.75); border-radius: 2px; z-index: 3; }
+    .tick-label { position: absolute; top: 16px; transform: translateX(-50%); font-size: 11px; color: #e5e7eb; white-space: nowrap; z-index: 3; }
     .state-meta { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
     @media (max-width: 1000px) {
       body { grid-template-columns: 1fr; padding: 14px; }
@@ -204,12 +176,7 @@
 <body>
   <div class="card map-card">
     <h1>Na濃度 × 体液量 マップ</h1>
-    <div class="legend">
-      <span class="badge"><span class="dot dot-euvo"></span>正 Na / 正体液量</span>
-      <span class="badge"><span class="dot dot-high"></span>高Na域</span>
-      <span class="badge"><span class="dot dot-low"></span>低Na域</span>
-      <span class="badge">区切り線: Na 135 / 145, 体液量 ±15 付近</span>
-    </div>
+    
     <div class="map-area" id="mapArea">
       <div class="grid" id="grid"></div>
       <div class="cut-lines">
@@ -217,97 +184,70 @@
         <div class="v-line" style="left:54.55%;"></div>
         <div class="h-line" style="top:37.5%;"></div>
         <div class="h-line" style="top:62.5%;"></div>
-        <div class="cut-label" style="left:36.36%; top:6%;">Na=135</div>
-        <div class="cut-label" style="left:54.55%; top:6%;">Na=145</div>
-        <div class="cut-label" style="left:6%; top:37.5%;">体液過剰↘</div>
-        <div class="cut-label" style="left:6%; top:62.5%;">↗脱水</div>
-        <div class="zone" style="left:16%; top:20%;">低Na + 過剰（希釈性/SIADHなど）</div>
-        <div class="zone" style="left:16%; top:80%;">低Na + 脱水（Na喪失優位）</div>
-        <div class="zone" style="left:84%; top:20%;">高Na + 過剰（Na負荷）</div>
-        <div class="zone" style="left:84%; top:80%;">高Na + 脱水（水欠乏/尿崩症）</div>
-        <div class="zone" style="left:50%; top:50%;">基準域 135-145 & 体液ほぼ正</div>
+        
+    
       </div>
-      <div class="axis-label axis-x">低Na ← 血清Na（mEq/L） → 高Na</div>
-      <div class="axis-label axis-y">体液量（↓脱水 / ↑過剰）</div>
-      <svg class="person" id="person" viewBox="0 0 80 160">
+      <div class="axis-label axis-x">血清Na濃度</div>
+      <div class="axis-label axis-y">体液量</div>
+      <svg class="person" id="person" viewBox="0 0 80 140">
         <defs>
-          <linearGradient id="body" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stop-color="#38bdf8"/>
-            <stop offset="100%" stop-color="#22d3ee"/>
-          </linearGradient>
+          <clipPath id="torsoClip">
+            <rect id="torsoRect" x="15" y="26" width="50" height="90" rx="10" ry="10"/>
+          </clipPath>
         </defs>
-        <circle cx="40" cy="24" r="18" fill="url(#body)"/>
-        <rect x="30" y="42" width="20" height="52" rx="8" fill="url(#body)"/>
-        <rect x="26" y="94" width="10" height="46" rx="6" fill="url(#body)"/>
-        <rect x="44" y="94" width="10" height="46" rx="6" fill="url(#body)"/>
-        <rect x="18" y="52" width="8" height="34" rx="5" fill="url(#body)"/>
-        <rect x="54" y="52" width="8" height="34" rx="5" fill="url(#body)"/>
+        <circle id="head" cx="40" cy="10" r="15" fill="#cfd2d8"/>
+        <rect id="torsoBase" x="15" y="26" width="50" height="90" rx="10" ry="10" fill="#d1d5db"/>
+        
+        
+        <path id="waterPath" clip-path="url(#torsoClip)" fill="#38bdf8" opacity="0.92"></path>
+        <rect id="torsoStroke" x="15" y="26" width="50" height="90" rx="10" ry="10" fill="none" stroke="#94a3b8" stroke-width="2"/>
       </svg>
+      <div class="avatar-label" id="avatarLabel">正常域</div>
     </div>
     <div class="bars">
-      <div class="bar-block">
-        <div class="bar-label"><span>血清Na</span><span id="naBarVal">140 mEq/L (基準比 ±0)</span></div>
-        <div class="bar-track track-na">
-          <div class="bar-normal" id="naNormal"></div>
-          <div class="bar-fill" id="naBarFill"></div>
-        </div>
-      </div>
-      <div class="bar-block">
-        <div class="bar-label"><span>体液量偏差</span><span id="volBarVal">±0</span></div>
-        <div class="bar-track track-vol">
-          <div class="bar-fill dual" id="volBarFill"></div>
-        </div>
-      </div>
+      <div class="bar-block"> 
+        <div class="bar-label"><span>血清Na</span><span id="naBarVal">140 mEq/L</span></div> 
+        <div class="bar-wrap"> 
+          <div class="bar-track track-na"> 
+            <div class="bar-fill" id="naBarFill"></div> 
+          </div> 
+          <div class="range-rail"> 
+            <div class="range-tick" style="left:36.36%;"></div>  
+            <div class="range-tick" style="left:54.54%;"></div>  
+             
+             
+           
+          </div> 
+        </div> 
+      </div> 
+      <div class="bar-block"> 
+        <div class="bar-label"><span>体液量</span><span id="volBarVal">ほぼ正常</span></div> 
+        <div class="bar-wrap"> 
+          <div class="bar-track track-vol"> 
+            <div class="bar-fill" id="volBarFill"></div> 
+          </div> 
+          <div class="range-rail"> 
+            <div class="range-tick" style="left:35%;"></div>  
+            <div class="range-tick" style="left:65%;"></div>  
+              
+          </div> 
+        </div> 
+      </div> 
     </div>
-    <div class="small">マップをタップ/ドラッグして位置を動かしてください。</div>
-  </div>
+    
+  </div> 
 
-  <div class="card">
-    <h2 id="stateTitle">状態</h2>
-    <div class="status-main" id="statusMain">血清Na 140 mEq/L・体液量 正常</div>
-    <div class="small" id="statusNote">基準域：135-145 mEq/L / 体液量：おおむね正常</div>
-    <div class="state-meta">
-      <div class="pill">血清Na: <span id="naVal">140</span> mEq/L</div>
-      <div class="pill">体液量: <span id="volVal">正</span></div>
-    </div>
-    <div class="state-grid" style="margin-top:6px;">
-      <div class="state-card">
-        <div class="small">推定病態</div>
-        <div id="dxList" class="intervention"></div>
-      </div>
-      <div class="state-card">
-        <div class="small">尿所見</div>
-        <div id="urine" class="intervention"></div>
-      </div>
-      <div class="state-card">
-        <div class="small">初期対応・輸液</div>
-        <div id="tx" class="intervention"></div>
-      </div>
-      <div class="state-card">
-        <div class="small">モニタリング</div>
-        <div id="monitor" class="intervention"></div>
-      </div>
-    </div>
-  </div>
-
-  <script>
-    const person = document.getElementById('person');
-    const mapArea = document.getElementById('mapArea');
-    const grid = document.getElementById('grid');
-    const naVal = document.getElementById('naVal');
-    const volVal = document.getElementById('volVal');
-    const statusMain = document.getElementById('statusMain');
-    const statusNote = document.getElementById('statusNote');
-    const dxList = document.getElementById('dxList');
-    const urine = document.getElementById('urine');
-    const tx = document.getElementById('tx');
-    const monitor = document.getElementById('monitor');
-    const stateTitle = document.getElementById('stateTitle');
-    const naBarFill = document.getElementById('naBarFill');
-    const naBarVal = document.getElementById('naBarVal');
-    const naNormal = document.getElementById('naNormal');
-    const volBarFill = document.getElementById('volBarFill');
-    const volBarVal = document.getElementById('volBarVal');
+  <script> 
+    const person = document.getElementById('person'); 
+    const mapArea = document.getElementById('mapArea'); 
+    const naBarFill = document.getElementById('naBarFill'); 
+    const naBarVal = document.getElementById('naBarVal'); 
+    const volBarFill = document.getElementById('volBarFill'); 
+    const volBarVal = document.getElementById('volBarVal'); 
+    const head = document.getElementById('head');
+    const waterPath = document.getElementById('waterPath');
+    const torsoStroke = document.getElementById('torsoStroke');
+    const avatarLabel = document.getElementById('avatarLabel');
 
     const presets = {
       hypo: {
@@ -333,7 +273,7 @@
     function clamp(v, min, max) { return Math.min(max, Math.max(min, v)); }
 
     function classify(na, vol) {
-      const volumeState = vol > 15 ? "過剰" : vol < -15 ? "減少" : "ほぼ正";
+      const volumeState = vol > 15 ? "過剰" : vol < -15 ? "減少" : "ほぼ正常";
       let bucket = "euvo";
       if (na < 135) bucket = "hypo";
       if (na > 145) bucket = "hyper";
@@ -354,93 +294,68 @@
       return { bucket, volumeState, nuance };
     }
 
-    function render(na, vol) {
-      const { bucket, volumeState, nuance } = classify(na, vol);
-      const px = (na - 115) / (170 - 115);
-      const py = 0.5 - (vol / 120);
-      const rect = mapArea.getBoundingClientRect();
-      const x = clamp(px * rect.width, 16, rect.width - 16);
-      const y = clamp(py * rect.height, 16, rect.height - 16);
-      person.style.left = `${x}px`;
-      person.style.top = `${y}px`;
-      naVal.textContent = na;
-      volVal.textContent = volumeState;
-      const preset = presets[bucket];
-      stateTitle.textContent = preset.label;
-      statusMain.textContent = `血清Na ${na} mEq/L・体液量 ${volumeState}`;
-      statusNote.textContent = nuance;
-      fillList(dxList, buildDx(bucket, volumeState));
-      fillList(urine, preset.urine);
-      fillList(tx, preset.tx);
-      fillList(monitor, preset.monitor);
-      colorTone(bucket);
-      updateBars(na, vol);
+    function render(na, vol) { 
+      const { bucket, volumeState, nuance } = classify(na, vol); 
+      const px = (na - 115) / (170 - 115); 
+      const py = 0.5 - (vol / 120); 
+      const rect = mapArea.getBoundingClientRect(); 
+      const x = clamp(px * rect.width, 16, rect.width - 16); 
+      const y = clamp(py * rect.height, 16, rect.height - 16); 
+      person.style.left = `${x}px`; 
+      person.style.top = `${y}px`; 
+      naBarVal.textContent = `${na} mEq/L`; 
+      volBarVal.textContent = volumeState; 
+      updateBars(na, vol); 
+      updateAvatar(na, vol); 
+      avatarLabel.textContent = nuance; 
+      avatarLabel.style.left = `${x}px`; 
+      avatarLabel.style.top = `${y}px`; 
+    } 
+
+    function colorTone(bucket) { 
+      person.style.filter = "none"; 
+    } 
+
+    function updateAvatar(na, vol) {
+      const torsoX = 15;
+      const torsoY = 26;
+      const torsoW = 50;
+      const torsoH = 90;
+      const fillRatio = clamp((vol + 50) / 100, 0.12, 0.95);
+      const levelY = torsoY + torsoH * (1 - fillRatio);
+      const bottomY = torsoY + torsoH;
+      const amp = 6;
+      const leftX = torsoX;
+      const rightX = torsoX + torsoW;
+      const midX = torsoX + torsoW / 2;
+      const q1X = torsoX + torsoW / 3;
+      const crestY = levelY - amp;
+      const d = [
+        `M ${leftX} ${levelY.toFixed(1)}`,
+        `Q ${q1X.toFixed(1)} ${crestY.toFixed(1)} ${midX.toFixed(1)} ${levelY.toFixed(1)}`,
+        `T ${rightX.toFixed(1)} ${levelY.toFixed(1)}`,
+        `L ${rightX.toFixed(1)} ${bottomY}`,
+        `L ${leftX} ${bottomY} Z`
+      ].join(' ');
+      waterPath.setAttribute('d', d);
+
+      const lightness = clamp(78 - ((na - 115) / (170 - 115)) * 36, 38, 78);
+      const color = `hsl(45, 85%, ${lightness}%)`; // Naバーと連動した黄系
+      head.setAttribute('fill', '#cfd2d8');
+      waterPath.setAttribute('fill', color);
+      torsoStroke.setAttribute('stroke', '#94a3b8');
     }
 
-    function fillList(el, items) {
-      el.innerHTML = "";
-      items.forEach(text => {
-        const div = document.createElement("div");
-        div.className = "pill";
-        div.textContent = text;
-        el.appendChild(div);
-      });
-    }
+    function updateBars(na, vol) {  
+      const naRawPercent = clamp(((na - 115) / (170 - 115)) * 100, 0, 100);  
+      const naPercent = 20 + naRawPercent * 0.6; // 最小20%残し、最大80%  
+      naBarFill.style.width = `${naPercent}%`;  
 
-    function buildDx(bucket, volumeState) {
-      if (bucket === "hypo") {
-        return [
-          "真性低Na: Na<135",
-          volumeState === "減少" ? "Na・水とも喪失: 嘔吐/下痢/出血/利尿薬/副腎不全" :
-          volumeState === "過剰" ? "希釈性: SIADH, 心不全, 肝硬変, ネフローゼ" :
-          "腎性/水中毒/薬剤性/SIADH を検討"
-        ];
-      }
-      if (bucket === "hyper") {
-        return [
-          "高Na: Na>145",
-          volumeState === "減少" ? "自由水欠乏: 発熱/発汗/下痢/尿崩症" :
-          volumeState === "過剰" ? "Na負荷: 高張輸液, 重曹, 海水誤飲" :
-          "水欠乏 or Na負荷の初期"
-        ];
-      }
-      return [
-        "Na 135-145: 正常域",
-        volumeState === "減少" ? "軽度脱水" :
-        volumeState === "過剰" ? "軽度体液過剰（浮腫傾向）" :
-        "水分出納バランス良好"
-      ];
-    }
-
-    function colorTone(bucket) {
-      const colors = {
-        hypo: "drop-shadow(0 0 12px rgba(251,191,36,0.6))",
-        hyper: "drop-shadow(0 0 12px rgba(248,113,113,0.7))",
-        euvo: "drop-shadow(0 0 12px rgba(52,211,153,0.6))"
-      };
-      person.style.filter = colors[bucket];
-    }
-
-    function updateBars(na, vol) {
-      const naPercent = clamp(((na - 115) / (170 - 115)) * 100, 0, 100);
-      naBarFill.style.width = `${naPercent}%`;
-      const deltaNa = na - 140;
-      const deltaText = deltaNa > 0 ? `+${deltaNa}` : `${deltaNa}`;
-      naBarVal.textContent = `${na} mEq/L (基準比 ${deltaText})`;
-      const normalStart = ((135 - 115) / (170 - 115)) * 100;
-      const normalWidth = ((145 - 135) / (170 - 115)) * 100;
-      naNormal.style.left = `${normalStart}%`;
-      naNormal.style.width = `${normalWidth}%`;
-
-      const volPct = clamp(Math.abs(vol) / 50 * 100, 0, 100);
-      volBarFill.style.width = `${volPct}%`;
-      if (vol >= 0) {
-        volBarFill.style.left = '50%';
-      } else {
-        volBarFill.style.left = `${50 - volPct}%`;
-      }
-      volBarVal.textContent = `${vol >= 0 ? '+' + vol : vol}`;
-    }
+      const volRaw = clamp((vol + 50) / 100 * 100, 0, 100); // -50〜+50 -> 0〜100  
+      const volPercent = 20 + volRaw * 0.6; // 最小20%、最大80%  
+      volBarFill.style.width = `${volPercent}%`;  
+      volBarFill.style.left = '0%';  
+    }  
 
     let dragging = false;
 
@@ -469,8 +384,7 @@
       applyPointer(e);
     });
 
-    window.addEventListener("pointerup", (e) => {
-      if (!dragging) return;
+    window.addEventListener("pointerup", () => {
       dragging = false;
     });
 
