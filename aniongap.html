@@ -3,31 +3,28 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>不揮発性の酸の緩衝 - スライダーで見るアニオンギャップ</title>
+<title>酸の緩衝</title>
 <style>
   :root{
-    --bg:#08101f;
-    --panel:#0e182b;
-    --card:#101d33;
-    --ink:#e9f2ff;
-    --muted:#93a4c4;
-    --grid:rgba(255,255,255,.04);
-    --accent:#3dd0ff;
-    --accent-2:#2bb8e4;
-    --ag:#12d6ff;
-    --hco3:#3de2cf;
-    --cl:#0e7ba5;
-    --na:#cfd8e3;
-    --line:rgba(255,255,255,.12);
+    --bg:#ffffff;
+    --panel:#ffffff;
+    --card:#ffffff;
+    --ink:#0f172a;
+    --muted:#475569;
+    --grid:rgba(0,0,0,.04);
+    --accent:#0ea5e9;
+    --accent-2:#0284c7;
+    --ag:#00ccff;
+    --hco3:#10b981;
+    --cl:#0f6fa0;
+    --na:#d6e2ef;
+    --line:rgba(15,23,42,.12);
   }
   *{box-sizing:border-box}
   body{
     margin:0;
     min-height:100vh;
-    background:
-      radial-gradient(120% 80% at 20% 10%, rgba(61,208,255,.10), transparent),
-      radial-gradient(100% 60% at 80% 20%, rgba(61,226,207,.12), transparent),
-      linear-gradient(160deg, #0a1525, #050c17);
+    background:var(--bg);
     color:var(--ink);
     font-family:"IBM Plex Sans JP","Noto Sans JP","Hiragino Sans","Yu Gothic",sans-serif;
     padding:18px;
@@ -37,9 +34,9 @@
   .frame{
     width:min(1100px,100%);
     background:var(--panel);
-    border:1px solid rgba(255,255,255,.08);
+    border:1px solid var(--line);
     border-radius:18px;
-    box-shadow:0 20px 50px rgba(0,0,0,.45);
+    box-shadow:0 10px 30px rgba(15,23,42,.12);
     padding:18px;
   }
   .top{
@@ -53,12 +50,12 @@
     align-items:center;
     gap:6px;
     padding:6px 10px;
-    background:rgba(61,208,255,.12);
-    border:1px solid rgba(61,208,255,.25);
+    background:rgba(14,165,233,.12);
+    border:1px solid rgba(14,165,233,.25);
     border-radius:999px;
     font-size:12px;
     letter-spacing:.05em;
-    color:#b6ecff;
+    color:#0f172a;
     margin:0 0 6px;
   }
   h1{
@@ -69,7 +66,7 @@
   .lead{margin:0 0 10px;color:var(--muted);font-size:14px;line-height:1.6}
   .chips{display:flex;gap:8px;flex-wrap:wrap}
   .chip{
-    background:rgba(255,255,255,.04);
+    background:#f8fafc;
     border:1px solid var(--line);
     border-radius:12px;
     padding:6px 10px;
@@ -198,6 +195,9 @@
   }
   .bar{
     position:relative;
+    overflow:visible;
+    width:100%;
+    min-width:0;
   }
   .bar-title{
     font-size:13px;
@@ -211,11 +211,14 @@
     position:relative;
     background:rgba(255,255,255,.03);
     border:1px solid rgba(255,255,255,.08);
-    border-radius:12px;
+    border-radius:0;
     height:82px;
     display:flex;
     flex-direction:row;
-    overflow:hidden;
+    overflow:visible; /* マーカーや端のバーが見切れないように */
+    width:100%;
+    max-width:100%;
+    min-width:0;
   }
   .seg{
     flex:0 0 0%;
@@ -227,27 +230,31 @@
     letter-spacing:.05em;
     position:relative;
     transition:flex-basis 220ms ease, background 200ms ease;
-    border-left:1px solid rgba(255,255,255,.08);
+    box-shadow:inset 1px 0 0 rgba(255,255,255,.06);
   }
-  .seg:first-child{border-left:none;}
-  .seg span{filter:drop-shadow(0 1px 0 rgba(0,0,0,.25))}
+  .seg:first-child{box-shadow:none;}
+  .seg span{filter:drop-shadow(0 1px 0 rgba(0,0,0,.25));font-size:12px;}
   .seg.cl{background:linear-gradient(180deg, #0d7298, #0b5d7b);}
   .seg.hco3{background:linear-gradient(180deg, #36d8c7, #22b7ac);}
   .seg.ag{
     background:rgba(18,214,255,.12);
-    color:#9be9ff;
+    color:#0b3245; /* 濃色で視認性アップ */
+    font-weight:800;
     border:1px dashed rgba(18,214,255,.7);
     box-shadow:0 0 0 1px rgba(18,214,255,.3) inset;
   }
   .na-stack{
     height:82px;
     margin-top:10px;
-    border-radius:12px;
-    background:linear-gradient(90deg, #cdd7e3, #9fb4cc);
-    border:1px solid rgba(255,255,255,.25);
-    box-shadow:0 10px 30px rgba(0,0,0,.25);
+    border-radius:0;
+    background:#e2e8f0;
+    border:1px solid var(--line);
+    box-shadow:none;
     position:relative;
     overflow:hidden;
+    width:100%;
+    max-width:100%;
+    min-width:0;
   }
   .na-stack::after{
     content:"Na⁺";
@@ -261,21 +268,7 @@
     color:#0a1322;
     text-shadow:0 1px 0 rgba(255,255,255,.6);
   }
-  .marker{
-    position:absolute;
-    top:-26px;
-    transform:translateX(-50%);
-    min-width:60px;
-    height:22px;
-    border-radius:10px;
-    background:linear-gradient(90deg,var(--accent),var(--accent-2));
-    color:#02101d;
-    font-size:11px;
-    padding:4px 8px;
-    text-align:center;
-    box-shadow:0 6px 14px rgba(0,0,0,.4);
-    pointer-events:none;
-  }
+  .marker{ display:none; }
   .legend{
     display:grid;
     grid-template-columns:repeat(auto-fit,minmax(140px,1fr));
@@ -308,26 +301,10 @@
   <div class="frame">
     <div class="top">
       <div>
-        <div class="eyebrow">図5 インタラクティブ</div>
-        <h1>不揮発性の酸の緩衝をスライダーで見る</h1>
-        <p class="lead">酸負荷を動かすと、HCO₃⁻低下と同時にアニオンギャップ（AG）が開き、足りない陰イオンをCl⁻で埋める様子まで連続的に確認できます。</p>
+        
+        <h1>酸の緩衝</h1>
         <div class="chips">
-          <div class="chip">基準: Na 140 / Cl 104 / HCO₃⁻ 24 / AG 12 (mEq/L)</div>
-          <div class="chip">スライダー最大 ≒ HCO₃⁻が枯渇しかけるところまで</div>
-        </div>
-      </div>
-    </div>
-
-    <div class="controls">
-      <div class="ctrl-row">
-        <div>
-          <label for="acidRange">酸負荷 (mEq/L)</label>
-          <input id="acidRange" class="range" type="range" min="0" max="18" step="0.5" value="0" />
-          <div class="ticks"><span>0</span><span>9</span><span>18</span></div>
-        </div>
-        <div class="badge-row">
-          <div class="pill">負荷 <strong id="acidText">0.0</strong> mEq/L</div>
-          <div class="pill">状態 <strong id="phaseText">正常域</strong></div>
+          
         </div>
       </div>
     </div>
@@ -337,11 +314,11 @@
         <div class="grid"></div>
         <div class="bar-wrap">
           <div class="bar">
-            <div class="bar-title"><span>陽イオン</span><span style="color:var(--muted)">固定: Na</span></div>
+            <div class="bar-title"><span>陽イオン</span><span style="color:var(--muted)"></span></div>
             <div class="na-stack" aria-label="Na基準"></div>
           </div>
           <div class="bar">
-            <div class="bar-title"><span>陰イオンの合計</span><span style="color:var(--muted)">Cl⁻ + HCO₃⁻ + AG</span></div>
+            <div class="bar-title"><span>陰イオン</span><span style="color:var(--muted)"></span></div>
             <div class="stack" aria-label="陰イオンスタック">
               <div class="seg cl" id="segCl"><span>Cl⁻</span></div>
               <div class="seg hco3" id="segHco3"><span>HCO₃⁻</span></div>
@@ -350,24 +327,21 @@
             </div>
           </div>
         </div>
-        <div class="legend">
-          <div>AG: <span id="agVal">12.0</span> mEq/L</div>
-          <div>HCO₃⁻: <span id="hco3Val">24.0</span> mEq/L</div>
-          <div>Cl⁻: <span id="clVal">104.0</span> mEq/L</div>
-          <div>総陰イオン: <span id="sumVal">140.0</span> mEq/L</div>
-        </div>
-        <div class="note" id="note">
-          AGが開く（増える）ほどHCO₃⁻が減少。負荷が大きくなるとCl⁻で穴埋めする動きが強まります。
-        </div>
+        
+        
       </div>
 
-      <div class="state">
-        <h3>読み方のヒント</h3>
-        <ul>
-          <li><strong>AG優位</strong>: HCO₃⁻が酸を受け止め、同じ量だけAGが開大。</li>
-          <li><strong>Cl代償</strong>: HCO₃⁻が足りなくなると、陰イオンの穴をCl⁻で埋める＝高Cl血症へ傾く。</li>
-          <li>棒の高さはNa基準（140 mEq/L）で正電荷＝負電荷になるよう正規化しています。</li>
-        </ul>
+     
+    </div>
+
+    <div class="controls" style="margin-top:18px;">
+      <div class="ctrl-row">
+        <div>
+          <label for="acidRange">酸負荷 (mEq/L)</label>
+          <input id="acidRange" class="range" type="range" min="0" max="18" step="0.5" value="0" />
+          <div class="ticks"><span>0</span><span>9</span><span>18</span></div>
+        </div>
+       
       </div>
     </div>
   </div>
@@ -386,9 +360,11 @@
   function clamp(v,min,max){ return Math.min(max, Math.max(min, v)); }
 
   function chlorideFraction(acid){
-    const ratio = acid / maxLoad;                // 0-1
-    const eased = Math.pow(ratio, 1.2);          // 緩やかに立ち上がる
-    return clamp(eased * 0.75, 0, 0.75);         // 最大でも75%をClで穴埋め
+    // 10 mEq/LあたりからCl補填を強めるSカーブ
+    const t = clamp(acid, 0, maxLoad);
+    const base = Math.pow(t / maxLoad, 1.2) * 0.45;           // 前半の緩やかな上昇
+    const surge = t > 10 ? ((t - 10) / (maxLoad - 10)) * 0.45 : 0; // 後半で加速
+    return clamp(base + surge, 0, 0.9);                       // 最大でも90%をClで穴埋め
   }
 
   function compute(acid){
@@ -410,10 +386,12 @@
     return { acid:buffered, hco3, cl, ag, clShare: clPart / buffered || 0 };
   }
 
-  function setWidth(el, value){
-    const pct = (value / base.na) * 100;
+  function setWidth(el, pct){
     el.style.flexBasis = pct.toFixed(3) + "%";
   }
+
+  const pct = (v,total)=> (v / total * 100);
+  const clampPct = (v,min=0,max=100)=> Math.min(max, Math.max(min, v));
 
   function describePhase(acid, share){
     if (acid < 2) return "正常域";
@@ -425,27 +403,33 @@
   function update(){
     const acid = Number($("acidRange").value);
     const { hco3, cl, ag, clShare } = compute(acid);
+    const total = cl + hco3 + ag;
+    const pctCl = pct(cl, total);
+    const pctH = pct(hco3, total);
+    const pctAg = 100 - pctCl - pctH; // 合計100%に揃える
 
-    setWidth(segCl, cl);
-    setWidth(segHco3, hco3);
-    setWidth(segAg, ag);
+    setWidth(segCl, pctCl);
+    setWidth(segHco3, pctH);
+    setWidth(segAg, pctAg);
 
-    segHco3.querySelector("span").textContent = `HCO₃⁻ ${hco3.toFixed(1)}`;
-    segCl.querySelector("span").textContent = `Cl⁻ ${cl.toFixed(1)}`;
-    segAg.querySelector("span").textContent = `AG ${ag.toFixed(1)}`;
+    // 棒のラベルはシンプルに名称のみ
+    segHco3.querySelector("span").textContent = "HCO₃⁻";
+    segCl.querySelector("span").textContent = "Cl⁻";
+    segAg.querySelector("span").textContent = "AG";
 
     $("acidText").textContent = acid.toFixed(1);
-    $("agVal").textContent = ag.toFixed(1);
-    $("hco3Val").textContent = hco3.toFixed(1);
-    $("clVal").textContent = cl.toFixed(1);
-    $("sumVal").textContent = (ag + hco3 + cl).toFixed(1);
+    $("agVal").textContent = `${ag.toFixed(1)} (${pctAg.toFixed(1)}%)`;
+    $("hco3Val").textContent = `${hco3.toFixed(1)} (${pctH.toFixed(1)}%)`;
+    $("clVal").textContent = `${cl.toFixed(1)} (${pctCl.toFixed(1)}%)`;
+    $("sumVal").textContent = `${total.toFixed(1)} (100%)`;
 
     const phase = describePhase(acid, clShare);
     $("phaseText").textContent = phase;
 
-    // マーカー位置（AG境界）を視覚化
-    const pctAgStart = ((cl + hco3) / base.na) * 100;
-    marker.style.left = pctAgStart.toFixed(1) + "%";
+    // マーカー位置（AG開始位置）を視覚化
+    const pctAgStart = ((cl + hco3) / total) * 100;
+    const safeLeft = clampPct(pctAgStart, 4, 96);
+    marker.style.left = safeLeft.toFixed(1) + "%";
     marker.textContent = phase.includes("Cl") ? "Cl補填" : "AG";
 
     $("note").textContent = phase + "：HCO₃⁻低下と合わせて " +
