@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Na濃度×体液量マップ</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --panel: #111827;
+      --accent: #38bdf8;
+      --accent-2: #22d3ee;
+      --text: #e5e7eb;
+      --muted: #9ca3af;
+      --grid: rgba(255,255,255,0.06);
+      --card: #1f2937;
+      --danger: #f87171;
+      --warn: #fbbf24;
+      --ok: #34d399;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", "Hiragino Sans", "Yu Gothic", sans-serif;
+      color: var(--text);
+      background: radial-gradient(120% 80% at 20% 20%, rgba(56,189,248,0.18), transparent),
+                  radial-gradient(120% 80% at 80% 30%, rgba(34,211,238,0.12), transparent),
+                  var(--bg);
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: 1.2fr 1fr;
+      gap: 16px;
+      padding: 18px;
+    }
+    h1 {
+      margin: 0 0 6px;
+      font-size: 22px;
+      letter-spacing: 0.02em;
+      color: #f8fafc;
+    }
+    h2 {
+      margin: 0 0 8px;
+      font-size: 15px;
+      color: #e0f2fe;
+      letter-spacing: 0.02em;
+    }
+    .card {
+      background: linear-gradient(145deg, #0b1220, #121a2b);
+      border: 1px solid rgba(255,255,255,0.04);
+      border-radius: 14px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+      padding: 14px;
+    }
+    .map-card {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .map-area {
+      position: relative;
+      height: clamp(320px, 65vh, 520px);
+      border-radius: 12px;
+      overflow: hidden;
+      touch-action: none;
+    }
+    .grid {
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(to right, var(--grid) 1px, transparent 1px),
+        linear-gradient(to bottom, var(--grid) 1px, transparent 1px);
+      background-size: calc(100% / 4) calc(100% / 4);
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.04);
+    }
+    .cut-lines {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+    }
+    .v-line, .h-line {
+      position: absolute;
+      opacity: 0.6;
+      background: linear-gradient(to bottom, transparent, rgba(255,255,255,0.5), transparent);
+    }
+    .v-line { top: 0; bottom: 0; width: 2px; }
+    .h-line { left: 0; right: 0; height: 2px; background: linear-gradient(to right, transparent, rgba(255,255,255,0.5), transparent); }
+    .cut-label {
+      position: absolute;
+      background: rgba(0,0,0,0.55);
+      border: 1px solid rgba(255,255,255,0.14);
+      color: #e0f2fe;
+      padding: 4px 8px;
+      border-radius: 8px;
+      font-size: 11px;
+      transform: translate(-50%, -50%);
+      backdrop-filter: blur(6px);
+      white-space: nowrap;
+    }
+    .zone {
+      position: absolute;
+      color: rgba(255,255,255,0.65);
+      font-size: 12px;
+      padding: 4px 8px;
+      border-radius: 8px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.04);
+      backdrop-filter: blur(4px);
+      pointer-events: none;
+    }
+    .axis-label {
+      position: absolute;
+      color: var(--muted);
+      font-size: 12px;
+      letter-spacing: 0.03em;
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      z-index: 3;
+    }
+    .axis-x { bottom: 4px; left: 14px; }
+    .axis-y { top: 12px; left: -6px; writing-mode: vertical-rl; transform: rotate(180deg); }
+    .person {
+      position: absolute;
+      width: 56px;
+      height: 120px;
+      cursor: grab;
+      transform: translate(-50%, -50%);
+      transition: filter 0.2s ease;
+      z-index: 2;
+      touch-action: none;
+    }
+    .person:active { cursor: grabbing; filter: drop-shadow(0 0 12px rgba(56,189,248,0.4)); }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.08);
+      margin: 2px 6px 6px 0;
+    }
+    .legend { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); }
+    .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+    .dot-high { background: var(--danger); }
+    .dot-low { background: var(--warn); }
+    .dot-euvo { background: var(--ok); }
+    .status-main {
+      font-size: 17px;
+      margin: 2px 0 6px;
+      color: #fef9c3;
+    }
+    .state-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+    .state-card {
+      background: var(--card);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 10px;
+      padding: 10px;
+      min-height: 120px;
+    }
+    .small { font-size: 12px; color: var(--muted); margin-bottom: 6px; }
+    .pill {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 8px;
+      font-size: 12px;
+      margin: 2px 6px 2px 0;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.06);
+    }
+    .intervention { display: grid; gap: 8px; }
+    .bars { display: grid; gap: 10px; }
+    .bar-block { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 8px 10px; }
+    .bar-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); margin-bottom: 6px; }
+    .bar-track { position: relative; height: 16px; border-radius: 8px; background: rgba(255,255,255,0.08); overflow: hidden; }
+    .bar-fill { position: absolute; inset: 0 0 0 0; width: 0; background: linear-gradient(90deg, var(--accent), var(--accent-2)); border-radius: 8px; transition: width 0.15s ease, left 0.15s ease; }
+    .bar-normal { position: absolute; top: 0; bottom: 0; background: rgba(52,211,153,0.18); border-left: 1px solid rgba(52,211,153,0.5); border-right: 1px solid rgba(52,211,153,0.5); }
+    .track-vol .bar-fill { background: linear-gradient(90deg, #fcd34d, #34d399); }
+    .dual { left: 50%; transform: translateX(0); }
+    .state-meta { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
+    @media (max-width: 1000px) {
+      body { grid-template-columns: 1fr; padding: 14px; }
+      .map-area { height: clamp(320px, 60vh, 460px); }
+      .legend { gap: 4px; }
+    }
+    @media (max-width: 640px) {
+      h1 { font-size: 18px; }
+      h2 { font-size: 14px; }
+      .card { padding: 12px; }
+      .state-grid { grid-template-columns: 1fr; }
+      .axis-label { font-size: 11px; }
+      .cut-label, .zone { font-size: 11px; }
+      .person { width: 60px; height: 130px; }
+      .map-area { height: 340px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="card map-card">
+    <h1>Na濃度 × 体液量 マップ</h1>
+    <div class="legend">
+      <span class="badge"><span class="dot dot-euvo"></span>正 Na / 正体液量</span>
+      <span class="badge"><span class="dot dot-high"></span>高Na域</span>
+      <span class="badge"><span class="dot dot-low"></span>低Na域</span>
+      <span class="badge">区切り線: Na 135 / 145, 体液量 ±15 付近</span>
+    </div>
+    <div class="map-area" id="mapArea">
+      <div class="grid" id="grid"></div>
+      <div class="cut-lines">
+        <div class="v-line" style="left:36.36%;"></div>
+        <div class="v-line" style="left:54.55%;"></div>
+        <div class="h-line" style="top:37.5%;"></div>
+        <div class="h-line" style="top:62.5%;"></div>
+        <div class="cut-label" style="left:36.36%; top:6%;">Na=135</div>
+        <div class="cut-label" style="left:54.55%; top:6%;">Na=145</div>
+        <div class="cut-label" style="left:6%; top:37.5%;">体液過剰↘</div>
+        <div class="cut-label" style="left:6%; top:62.5%;">↗脱水</div>
+        <div class="zone" style="left:16%; top:20%;">低Na + 過剰（希釈性/SIADHなど）</div>
+        <div class="zone" style="left:16%; top:80%;">低Na + 脱水（Na喪失優位）</div>
+        <div class="zone" style="left:84%; top:20%;">高Na + 過剰（Na負荷）</div>
+        <div class="zone" style="left:84%; top:80%;">高Na + 脱水（水欠乏/尿崩症）</div>
+        <div class="zone" style="left:50%; top:50%;">基準域 135-145 & 体液ほぼ正</div>
+      </div>
+      <div class="axis-label axis-x">低Na ← 血清Na（mEq/L） → 高Na</div>
+      <div class="axis-label axis-y">体液量（↓脱水 / ↑過剰）</div>
+      <svg class="person" id="person" viewBox="0 0 80 160">
+        <defs>
+          <linearGradient id="body" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#38bdf8"/>
+            <stop offset="100%" stop-color="#22d3ee"/>
+          </linearGradient>
+        </defs>
+        <circle cx="40" cy="24" r="18" fill="url(#body)"/>
+        <rect x="30" y="42" width="20" height="52" rx="8" fill="url(#body)"/>
+        <rect x="26" y="94" width="10" height="46" rx="6" fill="url(#body)"/>
+        <rect x="44" y="94" width="10" height="46" rx="6" fill="url(#body)"/>
+        <rect x="18" y="52" width="8" height="34" rx="5" fill="url(#body)"/>
+        <rect x="54" y="52" width="8" height="34" rx="5" fill="url(#body)"/>
+      </svg>
+    </div>
+    <div class="bars">
+      <div class="bar-block">
+        <div class="bar-label"><span>血清Na</span><span id="naBarVal">140 mEq/L (基準比 ±0)</span></div>
+        <div class="bar-track track-na">
+          <div class="bar-normal" id="naNormal"></div>
+          <div class="bar-fill" id="naBarFill"></div>
+        </div>
+      </div>
+      <div class="bar-block">
+        <div class="bar-label"><span>体液量偏差</span><span id="volBarVal">±0</span></div>
+        <div class="bar-track track-vol">
+          <div class="bar-fill dual" id="volBarFill"></div>
+        </div>
+      </div>
+    </div>
+    <div class="small">マップをタップ/ドラッグして位置を動かしてください。</div>
+  </div>
+
+  <div class="card">
+    <h2 id="stateTitle">状態</h2>
+    <div class="status-main" id="statusMain">血清Na 140 mEq/L・体液量 正常</div>
+    <div class="small" id="statusNote">基準域：135-145 mEq/L / 体液量：おおむね正常</div>
+    <div class="state-meta">
+      <div class="pill">血清Na: <span id="naVal">140</span> mEq/L</div>
+      <div class="pill">体液量: <span id="volVal">正</span></div>
+    </div>
+    <div class="state-grid" style="margin-top:6px;">
+      <div class="state-card">
+        <div class="small">推定病態</div>
+        <div id="dxList" class="intervention"></div>
+      </div>
+      <div class="state-card">
+        <div class="small">尿所見</div>
+        <div id="urine" class="intervention"></div>
+      </div>
+      <div class="state-card">
+        <div class="small">初期対応・輸液</div>
+        <div id="tx" class="intervention"></div>
+      </div>
+      <div class="state-card">
+        <div class="small">モニタリング</div>
+        <div id="monitor" class="intervention"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const person = document.getElementById('person');
+    const mapArea = document.getElementById('mapArea');
+    const grid = document.getElementById('grid');
+    const naVal = document.getElementById('naVal');
+    const volVal = document.getElementById('volVal');
+    const statusMain = document.getElementById('statusMain');
+    const statusNote = document.getElementById('statusNote');
+    const dxList = document.getElementById('dxList');
+    const urine = document.getElementById('urine');
+    const tx = document.getElementById('tx');
+    const monitor = document.getElementById('monitor');
+    const stateTitle = document.getElementById('stateTitle');
+    const naBarFill = document.getElementById('naBarFill');
+    const naBarVal = document.getElementById('naBarVal');
+    const naNormal = document.getElementById('naNormal');
+    const volBarFill = document.getElementById('volBarFill');
+    const volBarVal = document.getElementById('volBarVal');
+
+    const presets = {
+      hypo: {
+        label: "低Na血症",
+        urine: ["尿浸透圧: <100 → 水中毒/心因性多飲", "尿Na: <20 → 腎外Na喪失 (嘔吐/下痢/第三間隙)", "尿Na: ≧30 → 腎性喪失 or SIADH"],
+        tx: ["まず症候評価：痙攣・意識障害なら高張食塩水(3%) 100mLを10分で", "脱水なら等張液で補正（Naを急速に上げない）", "SIADHなら水制限±高張食塩水＋ループ利尿"],
+        monitor: ["Na補正速度: 8-10 mEq/L/日以内", "頻回採血（2-4h毎）、尿量・尿Na/浸透圧を並行チェック"]
+      },
+      hyper: {
+        label: "高Na血症",
+        urine: ["尿浸透圧: >800 → 不感蒸泄/Na負荷", "尿浸透圧: <300 → 尿崩症を考慮", "尿Na: 低値なら腎外喪失、高値なら腎性"],
+        tx: ["水欠乏なら自由水補正（5%Glu、経口）、ゆっくり補正", "体液過剰＋Na負荷なら利尿薬+低Na輸液", "中枢性尿崩症はデスモプレシンも検討"],
+        monitor: ["Na補正速度: 10-12 mEq/L/日以内", "水分出納、尿量(ml/kg/h)、体重・血糖・血ガスを観察"]
+      },
+      euvo: {
+        label: "ほぼ正常域",
+        urine: ["尿浸透圧: 300-800 (参考)", "尿量: 0.5-1 mL/kg/h 目安"],
+        tx: ["維持輸液: 1-1.5 mL/kg/h 等張液目安", "リスク: 薬剤性低Na（利尿薬/抗うつ薬等）を念のため確認"],
+        monitor: ["バイタル・電解質の定期チェック", "水分バランス・体重の推移を確認"]
+      }
+    };
+
+    function clamp(v, min, max) { return Math.min(max, Math.max(min, v)); }
+
+    function classify(na, vol) {
+      const volumeState = vol > 15 ? "過剰" : vol < -15 ? "減少" : "ほぼ正";
+      let bucket = "euvo";
+      if (na < 135) bucket = "hypo";
+      if (na > 145) bucket = "hyper";
+      let nuance = "";
+      if (bucket === "hypo") {
+        if (volumeState === "減少") nuance = "低張性脱水 (Na喪失優位)";
+        else if (volumeState === "過剰") nuance = "希釈性低Na (水過剰/SIADHなど)";
+        else nuance = "低Na (SIADH/薬剤/多飲など)";
+      } else if (bucket === "hyper") {
+        if (volumeState === "減少") nuance = "水欠乏型高Na (脱水/尿崩症など)";
+        else if (volumeState === "過剰") nuance = "Na負荷型高Na (高張輸液/海水誤飲など)";
+        else nuance = "高Na (自由水欠乏 or Na負荷)";
+      } else {
+        if (volumeState === "減少") nuance = "軽度脱水域";
+        else if (volumeState === "過剰") nuance = "軽度体液過剰";
+        else nuance = "基準域";
+      }
+      return { bucket, volumeState, nuance };
+    }
+
+    function render(na, vol) {
+      const { bucket, volumeState, nuance } = classify(na, vol);
+      const px = (na - 115) / (170 - 115);
+      const py = 0.5 - (vol / 120);
+      const rect = mapArea.getBoundingClientRect();
+      const x = clamp(px * rect.width, 16, rect.width - 16);
+      const y = clamp(py * rect.height, 16, rect.height - 16);
+      person.style.left = `${x}px`;
+      person.style.top = `${y}px`;
+      naVal.textContent = na;
+      volVal.textContent = volumeState;
+      const preset = presets[bucket];
+      stateTitle.textContent = preset.label;
+      statusMain.textContent = `血清Na ${na} mEq/L・体液量 ${volumeState}`;
+      statusNote.textContent = nuance;
+      fillList(dxList, buildDx(bucket, volumeState));
+      fillList(urine, preset.urine);
+      fillList(tx, preset.tx);
+      fillList(monitor, preset.monitor);
+      colorTone(bucket);
+      updateBars(na, vol);
+    }
+
+    function fillList(el, items) {
+      el.innerHTML = "";
+      items.forEach(text => {
+        const div = document.createElement("div");
+        div.className = "pill";
+        div.textContent = text;
+        el.appendChild(div);
+      });
+    }
+
+    function buildDx(bucket, volumeState) {
+      if (bucket === "hypo") {
+        return [
+          "真性低Na: Na<135",
+          volumeState === "減少" ? "Na・水とも喪失: 嘔吐/下痢/出血/利尿薬/副腎不全" :
+          volumeState === "過剰" ? "希釈性: SIADH, 心不全, 肝硬変, ネフローゼ" :
+          "腎性/水中毒/薬剤性/SIADH を検討"
+        ];
+      }
+      if (bucket === "hyper") {
+        return [
+          "高Na: Na>145",
+          volumeState === "減少" ? "自由水欠乏: 発熱/発汗/下痢/尿崩症" :
+          volumeState === "過剰" ? "Na負荷: 高張輸液, 重曹, 海水誤飲" :
+          "水欠乏 or Na負荷の初期"
+        ];
+      }
+      return [
+        "Na 135-145: 正常域",
+        volumeState === "減少" ? "軽度脱水" :
+        volumeState === "過剰" ? "軽度体液過剰（浮腫傾向）" :
+        "水分出納バランス良好"
+      ];
+    }
+
+    function colorTone(bucket) {
+      const colors = {
+        hypo: "drop-shadow(0 0 12px rgba(251,191,36,0.6))",
+        hyper: "drop-shadow(0 0 12px rgba(248,113,113,0.7))",
+        euvo: "drop-shadow(0 0 12px rgba(52,211,153,0.6))"
+      };
+      person.style.filter = colors[bucket];
+    }
+
+    function updateBars(na, vol) {
+      const naPercent = clamp(((na - 115) / (170 - 115)) * 100, 0, 100);
+      naBarFill.style.width = `${naPercent}%`;
+      const deltaNa = na - 140;
+      const deltaText = deltaNa > 0 ? `+${deltaNa}` : `${deltaNa}`;
+      naBarVal.textContent = `${na} mEq/L (基準比 ${deltaText})`;
+      const normalStart = ((135 - 115) / (170 - 115)) * 100;
+      const normalWidth = ((145 - 135) / (170 - 115)) * 100;
+      naNormal.style.left = `${normalStart}%`;
+      naNormal.style.width = `${normalWidth}%`;
+
+      const volPct = clamp(Math.abs(vol) / 50 * 100, 0, 100);
+      volBarFill.style.width = `${volPct}%`;
+      if (vol >= 0) {
+        volBarFill.style.left = '50%';
+      } else {
+        volBarFill.style.left = `${50 - volPct}%`;
+      }
+      volBarVal.textContent = `${vol >= 0 ? '+' + vol : vol}`;
+    }
+
+    let dragging = false;
+
+    function applyPointer(e) {
+      const rect = mapArea.getBoundingClientRect();
+      const x = clamp(e.clientX - rect.left, 0, rect.width);
+      const y = clamp(e.clientY - rect.top, 0, rect.height);
+      const na = Math.round(115 + (x / rect.width) * (170 - 115));
+      const vol = Math.round((0.5 - y / rect.height) * 120);
+      render(na, vol);
+    }
+
+    person.addEventListener("pointerdown", (e) => {
+      dragging = true;
+      person.setPointerCapture(e.pointerId);
+    });
+
+    mapArea.addEventListener("pointerdown", (e) => {
+      dragging = true;
+      mapArea.setPointerCapture(e.pointerId);
+      applyPointer(e);
+    });
+
+    window.addEventListener("pointermove", (e) => {
+      if (!dragging) return;
+      applyPointer(e);
+    });
+
+    window.addEventListener("pointerup", (e) => {
+      if (!dragging) return;
+      dragging = false;
+    });
+
+    // initial render
+    render(140, 0);
+  </script>
+</body>
+</html>
