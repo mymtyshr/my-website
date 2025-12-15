@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Na濃度×体液量マップ</title>
+  <title>Na血症チャート</title>
   <style>
     :root {
       --bg: #0f172a;
@@ -114,19 +114,21 @@
       touch-action: none;
     }
     .person:active { cursor: grabbing; }
-    .avatar-label {
-      position: absolute;
-      transform: translate(-50%, 130%);
-      padding: 4px 8px;
-      background: rgba(0,0,0,0.55);
-      border: 1px solid rgba(255,255,255,0.15);
-      border-radius: 8px;
-      font-size: 12px;
-      color: #e0f2fe;
-      z-index: 3;
-      pointer-events: none;
-      white-space: nowrap;
-    }
+    .avatar-label { 
+      position: absolute; 
+      top: 10px; 
+      right: 10px; 
+      padding: 6px 10px; 
+      background: rgba(0,0,0,0.6); 
+      border: 1px solid rgba(255,255,255,0.18); 
+      border-radius: 10px; 
+      font-size: 12px; 
+      color: #e0f2fe; 
+      z-index: 4; 
+      pointer-events: none; 
+      white-space: nowrap; 
+      backdrop-filter: blur(6px); 
+    } 
     .badge {
       display: inline-flex; align-items: center; gap: 6px;
       padding: 6px 10px; border-radius: 999px; font-size: 12px;
@@ -175,7 +177,7 @@
 </head>
 <body>
   <div class="card map-card">
-    <h1>Na濃度 × 体液量 マップ</h1>
+    <h1>Na血症チャート</h1>
     
     <div class="map-area" id="mapArea">
       <div class="grid" id="grid"></div>
@@ -189,20 +191,20 @@
       </div>
       <div class="axis-label axis-x">血清Na濃度</div>
       <div class="axis-label axis-y">体液量</div>
-      <svg class="person" id="person" viewBox="0 0 80 140">
-        <defs>
-          <clipPath id="torsoClip">
-            <rect id="torsoRect" x="15" y="26" width="50" height="90" rx="10" ry="10"/>
-          </clipPath>
+      <svg class="person" id="person" viewBox="0 0 80 140"> 
+        <defs> 
+          <clipPath id="torsoClip"> 
+            <rect id="torsoRect" x="15" y="26" width="50" height="90" rx="10" ry="10"/> 
+          </clipPath> 
         </defs>
         <circle id="head" cx="40" cy="10" r="15" fill="#cfd2d8"/>
         <rect id="torsoBase" x="15" y="26" width="50" height="90" rx="10" ry="10" fill="#d1d5db"/>
         
         
         <path id="waterPath" clip-path="url(#torsoClip)" fill="#38bdf8" opacity="0.92"></path>
-        <rect id="torsoStroke" x="15" y="26" width="50" height="90" rx="10" ry="10" fill="none" stroke="#94a3b8" stroke-width="2"/>
-      </svg>
-      <div class="avatar-label" id="avatarLabel">正常域</div>
+        <rect id="torsoStroke" x="15" y="26" width="50" height="90" rx="10" ry="10" fill="none" stroke="#94a3b8" stroke-width="2"/> 
+      </svg> 
+      <div class="avatar-label" id="avatarLabel">正常域</div> 
     </div>
     <div class="bars">
       <div class="bar-block"> 
@@ -244,10 +246,10 @@
     const naBarVal = document.getElementById('naBarVal'); 
     const volBarFill = document.getElementById('volBarFill'); 
     const volBarVal = document.getElementById('volBarVal'); 
-    const head = document.getElementById('head');
-    const waterPath = document.getElementById('waterPath');
-    const torsoStroke = document.getElementById('torsoStroke');
-    const avatarLabel = document.getElementById('avatarLabel');
+    const head = document.getElementById('head'); 
+    const waterPath = document.getElementById('waterPath'); 
+    const torsoStroke = document.getElementById('torsoStroke'); 
+    const avatarLabel = document.getElementById('avatarLabel'); 
 
     const presets = {
       hypo: {
@@ -279,16 +281,16 @@
       if (na > 145) bucket = "hyper";
       let nuance = "";
       if (bucket === "hypo") {
-        if (volumeState === "減少") nuance = "低張性脱水 (Na喪失優位)";
-        else if (volumeState === "過剰") nuance = "希釈性低Na (水過剰/SIADHなど)";
-        else nuance = "低Na (SIADH/薬剤/多飲など)";
+        if (volumeState === "減少") nuance = "低張性脱水";
+        else if (volumeState === "過剰") nuance = "希釈性低Na";
+        else nuance = "SIADH";
       } else if (bucket === "hyper") {
-        if (volumeState === "減少") nuance = "水欠乏型高Na (脱水/尿崩症など)";
-        else if (volumeState === "過剰") nuance = "Na負荷型高Na (高張輸液/海水誤飲など)";
-        else nuance = "高Na (自由水欠乏 or Na負荷)";
+        if (volumeState === "減少") nuance = "脱水/尿崩症";
+        else if (volumeState === "過剰") nuance = "塩中毒";
+        else nuance = "高Na血症";
       } else {
-        if (volumeState === "減少") nuance = "軽度脱水域";
-        else if (volumeState === "過剰") nuance = "軽度体液過剰";
+        if (volumeState === "減少") nuance = "脱水";
+        else if (volumeState === "過剰") nuance = "体液過剰";
         else nuance = "基準域";
       }
       return { bucket, volumeState, nuance };
@@ -307,19 +309,17 @@
       volBarVal.textContent = volumeState; 
       updateBars(na, vol); 
       updateAvatar(na, vol); 
-      avatarLabel.textContent = nuance; 
-      avatarLabel.style.left = `${x}px`; 
-      avatarLabel.style.top = `${y}px`; 
+      avatarLabel.textContent = labelSummary(bucket, volumeState, nuance); 
     } 
 
     function colorTone(bucket) { 
       person.style.filter = "none"; 
     } 
 
-    function updateAvatar(na, vol) {
-      const torsoX = 15;
-      const torsoY = 26;
-      const torsoW = 50;
+    function updateAvatar(na, vol) { 
+      const torsoX = 15; 
+      const torsoY = 26; 
+      const torsoW = 50; 
       const torsoH = 90;
       const fillRatio = clamp((vol + 50) / 100, 0.12, 0.95);
       const levelY = torsoY + torsoH * (1 - fillRatio);
@@ -340,10 +340,30 @@
       waterPath.setAttribute('d', d);
 
       const lightness = clamp(78 - ((na - 115) / (170 - 115)) * 36, 38, 78);
-      const color = `hsl(45, 85%, ${lightness}%)`; // Naバーと連動した黄系
-      head.setAttribute('fill', '#cfd2d8');
-      waterPath.setAttribute('fill', color);
-      torsoStroke.setAttribute('stroke', '#94a3b8');
+      const color = `hsl(45, 85%, ${lightness}%)`; // Naバーと連動した黄系 
+      head.setAttribute('fill', '#cfd2d8'); 
+      waterPath.setAttribute('fill', color); 
+      torsoStroke.setAttribute('stroke', '#94a3b8'); 
+    } 
+
+    function labelSummary(bucket, volumeState, nuance) {
+      // まとめ表示: 主要ラベル + 機序括弧書き
+      if (bucket === "hypo") {
+        if (volumeState === "過剰") return "希釈性低Na";
+        if (volumeState === "減少") return "低張性脱水（Na喪失＞H2O喪失）";
+        return "SIADH";
+      }
+      if (bucket === "hyper") {
+        if (volumeState === "過剰") return "塩中毒";
+        if (volumeState === "減少") return "脱水（H2O喪失＞Na喪失）";
+        return "高Na血症";
+      }
+      if (bucket === "euvo") {
+        if (volumeState === "過剰") return "体液過剰";
+        if (volumeState === "減少") return "軽度脱水";
+        return "正常";
+      }
+      return nuance;
     }
 
     function updateBars(na, vol) {  
