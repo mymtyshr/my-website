@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ADH分泌と浸透圧・体液量</title>
+  <style>
+    :root {
+      --bg: #f8f8fb;
+      --panel: #ffffff;
+      --ink: #1f1f1f;
+      --muted: #6b6b6b;
+      --accent: #2b6de0;
+      --accent-soft: rgba(43, 109, 224, 0.12);
+      --grid: #d9d9e3;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 32px;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: "Segoe UI", "Hiragino Sans", "Yu Gothic UI", "Meiryo", sans-serif;
+    }
+    h1 {
+      margin: 0 0 8px;
+      font-size: 24px;
+      letter-spacing: 0.3px;
+    }
+    p.lead {
+      margin: 0 0 18px;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+    .card {
+      background: var(--panel);
+      border: 1px solid #e3e3ed;
+      border-radius: 14px;
+      padding: 20px 24px 28px;
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.04);
+      max-width: 1120px;
+    }
+    .controls {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      gap: 14px;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    .controls label {
+      font-weight: 600;
+      letter-spacing: 0.2px;
+    }
+    .slider-wrap {
+      display: grid;
+      gap: 6px;
+    }
+    input[type="range"] {
+      width: 100%;
+      accent-color: var(--accent);
+    }
+    .slider-meta {
+      display: flex;
+      justify-content: space-between;
+      font-size: 13px;
+      color: var(--muted);
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 10px;
+      font-size: 13px;
+      background: var(--accent-soft);
+      color: var(--accent);
+      border-radius: 8px;
+      border: 1px solid rgba(43, 109, 224, 0.2);
+      white-space: nowrap;
+    }
+    .meter {
+      position: relative;
+      width: 140px;
+      height: 12px;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #e45b5b, #f0c14b, #4caf50);
+      box-shadow: inset 0 0 0 1px rgba(0,0,0,0.06);
+    }
+    .meter-thumb {
+      position: absolute;
+      top: -5px;
+      width: 6px;
+      height: 22px;
+      background: #1f1f1f;
+      border-radius: 3px;
+      transition: left 0.18s ease;
+    }
+    .meter-label {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 4px;
+      text-align: right;
+    }
+    .chart-shell {
+      margin-top: 12px;
+      background: #fff;
+      border-radius: 10px;
+      border: 1px solid #e6e6ee;
+      padding: 12px;
+    }
+    svg {
+      width: 100%;
+      height: auto;
+      max-height: 620px;
+      touch-action: none;
+      user-select: none;
+    }
+    .axis { stroke: #1f1f1f; stroke-width: 1.2; }
+    .tick { stroke: #777; stroke-width: 1; }
+    .grid { stroke: var(--grid); stroke-width: 1; }
+    .curve { fill: none; stroke: var(--accent); stroke-width: 3; }
+    .threshold { stroke: #8c4bff; stroke-width: 2; stroke-dasharray: 6 6; }
+    .hint { fill: var(--muted); font-size: 13px; }
+    .label { fill: #222; font-size: 14px; }
+    .note { fill: #444; font-size: 12px; }
+    .dot { fill: #ef476f; stroke: #fff; stroke-width: 2; }
+    .hover-text { fill: #ef476f; font-size: 13px; font-weight: 600; }
+    .summary {
+      margin-top: 10px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.6;
+    }
+    @media (max-width: 700px) {
+      body { padding: 16px; }
+      .controls { grid-template-columns: 1fr; }
+      .controls label { margin-bottom: -4px; }
+      .badge { justify-self: start; }
+      svg { max-height: none; }
+    }
+    @media (max-width: 540px) {
+      h1 { font-size: 19px; }
+      p.lead { font-size: 13px; }
+      .controls { gap: 10px; }
+      .slider-meta { font-size: 12px; }
+      .badge { font-size: 12px; padding: 6px 8px; }
+      .meter { width: 120px; }
+      .meter-label { font-size: 11px; }
+      .hint, .label, .note { font-size: 12px; }
+      .hover-text { font-size: 12px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>ADH分泌のスイッチ：浸透圧 × 体液量</h1>
+    <p class="lead">
+      体液量が減ると ADH の立ち上がりが早く・急峻になり，体液量が増えると緩やかになります。
+      スライダで体液量シフトを変えると傾きが変化し，カーソルを置いた浸透圧での推定 ADH 分泌量を点で示します。
+    </p>
+
+    <div class="controls">
+      <label for="volumeSlider">体液量シフト</label>
+      <div class="slider-wrap">
+        <input id="volumeSlider" type="range" min="-20" max="20" value="0" step="1">
+        <div class="slider-meta">
+          <span>脱水（感度↑）</span>
+          <span id="volumeValue" class="badge">±0% / 閾値 285 mOsm</span>
+          <span>過剰水（感度↓）</span>
+        </div>
+      </div>
+      <div>
+        <div class="meter" aria-hidden="true">
+          <div class="meter-thumb" id="meterThumb" style="left: 50%;"></div>
+        </div>
+        <div class="meter-label" id="meterLabel">感度 1.0x / 傾き 0.22</div>
+      </div>
+    </div>
+
+    <div class="chart-shell">
+      <svg id="chart" viewBox="0 0 980 620" aria-label="ADHと浸透圧の関係グラフ">
+        <defs>
+          <linearGradient id="bgGrad" x1="0" x2="0" y1="0" y2="1">
+            <stop offset="0%" stop-color="rgba(47,111,228,0.06)"/>
+            <stop offset="100%" stop-color="rgba(47,111,228,0.0)"/>
+          </linearGradient>
+        </defs>
+        <rect x="0" y="0" width="980" height="620" fill="url(#bgGrad)" rx="12" />
+        <g id="chart-body"></g>
+        <g id="overlay"></g>
+      </svg>
+      <div class="summary" id="summaryText"></div>
+    </div>
+  </div>
+
+  <script>
+    const state = {
+      minX: 280,
+      maxX: 325,
+      minY: 0,
+      maxY: 10,
+      baseThreshold: 285,
+      baseSlope: 0.22,
+      margin: { top: 40, right: 90, bottom: 80, left: 90 },
+      width: 980,
+      height: 620,
+    };
+
+    const ns = "http://www.w3.org/2000/svg";
+    const svg = document.getElementById("chart");
+    const bodyGroup = document.getElementById("chart-body");
+    const overlayGroup = document.getElementById("overlay");
+    const volumeSlider = document.getElementById("volumeSlider");
+    const volumeValue = document.getElementById("volumeValue");
+    const summaryText = document.getElementById("summaryText");
+    const meterThumb = document.getElementById("meterThumb");
+    const meterLabel = document.getElementById("meterLabel");
+
+    const plotWidth = state.width - state.margin.left - state.margin.right;
+    const plotHeight = state.height - state.margin.top - state.margin.bottom;
+
+    const xScale = (v) =>
+      state.margin.left + ((v - state.minX) / (state.maxX - state.minX)) * plotWidth;
+    const yScale = (v) =>
+      state.height - state.margin.bottom - ((v - state.minY) / (state.maxY - state.minY)) * plotHeight;
+
+    function adhAt(osm, threshold, slope) {
+      const rise = Math.max(0, osm - threshold);
+      return Math.min(state.maxY, rise * slope);
+    }
+
+    function makeLine(x1, y1, x2, y2, cls) {
+      const line = document.createElementNS(ns, "line");
+      line.setAttribute("x1", x1);
+      line.setAttribute("y1", y1);
+      line.setAttribute("x2", x2);
+      line.setAttribute("y2", y2);
+      line.setAttribute("class", cls);
+      return line;
+    }
+
+    function makeText(x, y, text, cls, rotate = null, anchor = "middle") {
+      const t = document.createElementNS(ns, "text");
+      t.setAttribute("x", x);
+      t.setAttribute("y", y);
+      t.setAttribute("class", cls);
+      t.setAttribute("text-anchor", anchor);
+      if (rotate) t.setAttribute("transform", `rotate(${rotate} ${x} ${y})`);
+      t.textContent = text;
+      return t;
+    }
+
+    function makePath(d, cls) {
+      const path = document.createElementNS(ns, "path");
+      path.setAttribute("d", d);
+      path.setAttribute("class", cls);
+      path.setAttribute("fill", "none");
+      return path;
+    }
+
+    function buildAxes() {
+      const g = document.createElementNS(ns, "g");
+
+      // Axes
+      g.appendChild(
+        makeLine(xScale(state.minX), yScale(state.minY), xScale(state.maxX), yScale(state.minY), "axis")
+      );
+      g.appendChild(
+        makeLine(xScale(state.minX), yScale(state.minY), xScale(state.minX), yScale(state.maxY), "axis")
+      );
+
+      // Grid and ticks
+      const xTicks = [280, 285, 290, 295, 300, 305, 315, 325];
+      xTicks.forEach((tick) => {
+        const x = xScale(tick);
+        g.appendChild(makeLine(x, yScale(state.minY), x, yScale(state.maxY), "grid"));
+        g.appendChild(makeLine(x, yScale(state.minY), x, yScale(state.minY) + 8, "tick"));
+        g.appendChild(makeText(x, yScale(state.minY) + 24, `${tick}`, "label"));
+      });
+
+      const yTicks = [0, 2, 4, 6, 8, 10];
+      yTicks.forEach((tick) => {
+        const y = yScale(tick);
+        g.appendChild(makeLine(xScale(state.minX), y, xScale(state.maxX), y, "grid"));
+        g.appendChild(makeLine(xScale(state.minX) - 8, y, xScale(state.minX), y, "tick"));
+        g.appendChild(makeText(xScale(state.minX) - 14, y + 4, `${tick}`, "label", null, "end"));
+      });
+
+      // Axis labels
+      g.appendChild(makeText(xScale(state.maxX) - 10, yScale(state.minY) + 52, "血漿浸透圧 (mOsm)", "hint", null, "end"));
+      g.appendChild(makeText(xScale(state.minX) - 60, yScale(state.maxY) - 10, "ADH (相対量)", "hint", -90));
+
+      // Context notes
+      g.appendChild(
+        makeText(
+          xScale(state.minX) + 80,
+          yScale(state.maxY) + 22,
+          "図: 体液量シフトで ADH の立ち上がり傾きが変化",
+          "hint",
+          null,
+          "start"
+        )
+      );
+      g.appendChild(
+        makeText(
+          xScale(state.minX) + 160,
+          yScale(state.maxY) + 50,
+          "脱水で急峻・過剰水で緩やか",
+          "note",
+          null,
+          "start"
+        )
+      );
+
+      return g;
+    }
+
+    const curvePath = makePath("", "curve");
+    const thresholdLine = makeLine(0, yScale(state.minY), 0, yScale(state.maxY), "threshold");
+    const hoverDot = document.createElementNS(ns, "circle");
+    hoverDot.setAttribute("r", 7);
+    hoverDot.setAttribute("class", "dot");
+    hoverDot.style.display = "none";
+
+    const hoverText = document.createElementNS(ns, "text");
+    hoverText.setAttribute("class", "hover-text");
+    hoverText.style.display = "none";
+
+    function updateCurve() {
+      const shiftPct = parseInt(volumeSlider.value, 10);
+
+      // 体液量↓で閾値を少し左に、傾きを強くする（メーター的な感度変化）
+      const threshold = state.baseThreshold - shiftPct * 0.2;
+      const slopeFactor = 1 + (-shiftPct) * 0.03; // -20% -> +1.6x, +20% -> 0.4x
+      const slope = Math.max(0.05, state.baseSlope * slopeFactor);
+
+      const points = [];
+      for (let x = state.minX; x <= state.maxX; x += 1) {
+        const y = adhAt(x, threshold, slope);
+        points.push([xScale(x), yScale(y)]);
+      }
+
+      const d = points.reduce((acc, [px, py], idx) => acc + (idx === 0 ? `M ${px} ${py}` : ` L ${px} ${py}`), "");
+
+      curvePath.setAttribute("d", d);
+      thresholdLine.setAttribute("x1", xScale(threshold));
+      thresholdLine.setAttribute("x2", xScale(threshold));
+
+      volumeValue.textContent = `${shiftPct > 0 ? "+" : ""}${shiftPct}% / 閾値 ${threshold.toFixed(1)} mOsm`;
+
+      const tendency =
+        shiftPct < 0 ? "脱水シナリオ（急峻）" : shiftPct > 0 ? "過剰水シナリオ（緩やか）" : "基準シナリオ";
+      summaryText.textContent = `体液量シフト: ${tendency}。閾値は ${threshold.toFixed(1)} mOsm 付近、傾きは ${slope.toFixed(
+        2
+      )}（感度 ${(slope / state.baseSlope).toFixed(2)}x）。カーソル位置での推定 ADH を点で表示します。`;
+
+      // Move meter thumb (0-100%)
+      const meterPos = Math.max(0, Math.min(100, 50 + (-shiftPct) * 2.5)); // 左が脱水
+      meterThumb.style.left = `${meterPos}%`;
+      meterLabel.textContent = `感度 ${(slope / state.baseSlope).toFixed(2)}x / 傾き ${slope.toFixed(2)}`;
+
+      hideHover();
+    }
+
+    function showHover(osm) {
+      const shiftPct = parseInt(volumeSlider.value, 10);
+      const threshold = state.baseThreshold - shiftPct * 0.2;
+      const slope = Math.max(0.05, state.baseSlope * (1 + (-shiftPct) * 0.03));
+      const xVal = Math.min(Math.max(osm, state.minX), state.maxX);
+      const yVal = adhAt(xVal, threshold, slope);
+
+      const px = xScale(xVal);
+      const py = yScale(yVal);
+
+      hoverDot.setAttribute("cx", px);
+      hoverDot.setAttribute("cy", py);
+      hoverDot.style.display = "block";
+
+      hoverText.setAttribute("x", px + 10);
+      hoverText.setAttribute("y", py - 12);
+      hoverText.textContent = `浸透圧 ${xVal.toFixed(1)} mOsm / ADH ${yVal.toFixed(2)} (相対)`;
+      hoverText.style.display = "block";
+    }
+
+    function hideHover() {
+      hoverDot.style.display = "none";
+      hoverText.style.display = "none";
+    }
+
+    function eventToOsm(ev) {
+      const pt = svg.createSVGPoint();
+      pt.x = ev.clientX;
+      pt.y = ev.clientY;
+      const svgPt = pt.matrixTransform(svg.getScreenCTM().inverse());
+      const xInPlot = svgPt.x - state.margin.left;
+      const ratio = xInPlot / plotWidth;
+      return { osm: state.minX + ratio * (state.maxX - state.minX), ratio };
+    }
+
+    function handleMove(ev) {
+      const { osm, ratio } = eventToOsm(ev);
+      if (ratio >= 0 && ratio <= 1) {
+        showHover(osm);
+      } else {
+        hideHover();
+      }
+    }
+
+    function setupOverlay() {
+      const rect = document.createElementNS(ns, "rect");
+      rect.setAttribute("x", state.margin.left);
+      rect.setAttribute("y", state.margin.top);
+      rect.setAttribute("width", plotWidth);
+      rect.setAttribute("height", plotHeight);
+      rect.setAttribute("fill", "transparent");
+      rect.style.cursor = "crosshair";
+      rect.addEventListener("mousemove", handleMove);
+      rect.addEventListener("touchmove", (ev) => {
+        if (ev.touches && ev.touches[0]) {
+          handleMove(ev.touches[0]);
+        }
+      }, { passive: true });
+      rect.addEventListener("mouseleave", hideHover);
+      rect.addEventListener("touchend", hideHover);
+      overlayGroup.appendChild(rect);
+    }
+
+    function init() {
+      const axes = buildAxes();
+      bodyGroup.appendChild(axes);
+      bodyGroup.appendChild(thresholdLine);
+      bodyGroup.appendChild(curvePath);
+      bodyGroup.appendChild(hoverDot);
+      bodyGroup.appendChild(hoverText);
+      setupOverlay();
+      updateCurve();
+      volumeSlider.addEventListener("input", updateCurve);
+    }
+
+    init();
+  </script>
+</body>
+</html>
